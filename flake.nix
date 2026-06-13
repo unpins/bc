@@ -30,6 +30,7 @@
         import ./multicall.nix { lib = pkgs.lib // lib; } {
           inherit pkgs;
           basePkg = withReadlineFallback pkgs.pkgsStatic;
+          isTargetDarwin = pkgs.pkgsStatic.stdenv.hostPlatform.isDarwin;
         };
       # Windows: NO cosmo needed. bc is pure compute (zero POSIX-only headers),
       # so it goes through mingw with three small, non-POSIX fixes:

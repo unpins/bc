@@ -42,6 +42,7 @@
 { pkgs                  # build-host pkgs (writeText, withAliases)
 , basePkg               # the bc derivation to fold (native or mingw)
 , isWindows ? false     # mingw PE: bin/bc.exe, embedded `dc` alias, no symlink
+, isTargetDarwin ? false # Mach-O: nm prints `_`-prefixed names + `S`-type data
 }:
 let
   exe = lib.optionalString isWindows ".exe";
@@ -79,9 +80,12 @@ let
         echo "/* bc multicall rename header: ${prog} */"
         echo "#define main ${prog}_main"
         $NM --defined-only -g ${objs} 2>/dev/null \
-          | awk -v p="${prog}" '
-              $2 ~ /^[TBDRC]$/ && $3 ~ /^[A-Za-z_][A-Za-z0-9_]*$/ && $3 != "main" {
-                if (!seen[$3]++) print "#define " $3 " " p "__" $3
+          | awk -v p="${prog}" -v strip=${if isTargetDarwin then "1" else "0"} '
+              $2 ~ /^[TBDRWVCS]$/ {
+                sym = $3
+                if (strip && sym ~ /^_/) sym = substr(sym, 2)
+                if (sym ~ /^[A-Za-z_][A-Za-z0-9_]*$/ && sym != "main" && !seen[sym]++)
+                  print "#define " sym " " p "__" sym
               }'
       } > multicall/${prog}.rename.h
     '';
