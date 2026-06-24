@@ -26,12 +26,26 @@
       binName = "bc";
       smoke = [ "--version" ];
       smokePattern = "1\\.08";
-      build = pkgs:
-        import ./multicall.nix { lib = pkgs.lib // lib; } {
-          inherit pkgs;
-          basePkg = withReadlineFallback pkgs.pkgsStatic;
-          isTargetDarwin = pkgs.pkgsStatic.stdenv.hostPlatform.isDarwin;
-        };
+
+      # Build via the unpin-llvm engine + emit a bitcode multicall module. The
+      # engine compiles bc (bc + dc) to bitcode and the standalone self-folds
+      # them into one `bc` binary; with `multicall.darwin = true` the same
+      # engine path runs natively on darwin (Mach-O bitcode module folded by
+      # ld64.lld — the set-level adapter sets apple-sdk = null, so pkgsStatic
+      # never realizes apple-sdk-static). Windows stays objcopy via
+      # windowsBuild + ./multicall.nix. Pure C — no requires.cxx. The bare
+      # `bc --version` smoke is itself the canonical applet, so defaultProgram
+      # pins it.
+      engine = "unpin-llvm";
+      multicall = {
+        inferLinkInputs = true;
+        # Fold into the darwin (Mach-O) mega via the engine, same as Linux —
+        # mirrors grep. No bespoke objcopy darwin path.
+        darwin = true;
+        defaultProgram = "bc";
+        programs = [ { name = "bc"; } { name = "dc"; } ];
+      };
+      build = pkgs: withReadlineFallback pkgs.pkgsStatic;   # engine: apps → bitcode → selfFold
       # Windows: NO cosmo needed. bc is pure compute (zero POSIX-only headers),
       # so it goes through mingw with three small, non-POSIX fixes:
       #   * buildInputs = [] — nixpkgs lists `readline` and `flex` (libfl) as
