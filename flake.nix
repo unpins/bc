@@ -8,11 +8,9 @@
 
   inputs.unpins-lib.url = "github:unpins/nix-lib";
 
-  # bc + dc folded into one multicall binary at $out/bin/bc with `dc` as an
-  # argv[0]-dispatch UNPIN_META alias. See ./multicall.nix. bc builds
-  # --with-readline; readline pulls ncurses for terminfo lookup, so we swap in
-  # the embedded-fallback ncurses (same as dash) so interactive line editing
-  # works without a host /usr/share/terminfo.
+  # bc --with-readline pulls ncurses for terminfo lookup, so swap in the
+  # embedded-fallback ncurses (same as dash) so line editing works without a
+  # host /usr/share/terminfo.
   outputs = { self, unpins-lib }:
     let
       lib = unpins-lib.lib;
@@ -27,33 +25,20 @@
       smoke = [ "--version" ];
       smokePattern = "1\\.08";
 
-      # Build via the unpin-llvm engine + emit a bitcode multicall module. The
-      # engine compiles bc (bc + dc) to bitcode and the standalone self-folds
-      # them into one `bc` binary; with `multicall.darwin = true` the same
-      # engine path runs natively on darwin (Mach-O bitcode module folded by
-      # ld64.lld — the set-level adapter sets apple-sdk = null, so pkgsStatic
-      # never realizes apple-sdk-static). Windows stays objcopy via
-      # windowsBuild + ./multicall.nix. Pure C — no requires.cxx. The bare
-      # `bc --version` smoke is itself the canonical applet, so defaultProgram
-      # pins it.
+      # bc + dc fold into one `bc` binary; `dc` is an argv[0] alias.
+      # defaultProgram pins bc so the bare `--version` smoke hits it.
       engine = "unpin-llvm";
       multicall = {
         inferLinkInputs = true;
-        # Fold into the darwin (Mach-O) mega via the engine, same as Linux —
-        # mirrors grep. No bespoke objcopy darwin path.
         darwin = true;
         defaultProgram = "bc";
         programs = [ { name = "bc"; } { name = "dc"; } ];
       };
-      build = pkgs: withReadlineFallback pkgs.pkgsStatic;   # engine: apps → bitcode → selfFold
-      # Windows: NO cosmo needed. bc is pure compute (zero POSIX-only headers),
-      # so it goes through mingw with three small, non-POSIX fixes:
-      #   * buildInputs = [] — nixpkgs lists `readline` and `flex` (libfl) as
-      #     host inputs, which cross-leak full readline-mingw + flex-mingw builds;
-      #   * configureFlags = [ "--without-readline" ];
-      #   * -Dsrandom=srand -Drandom=rand (mingw has no BSD random()).
-      # Same multicall fold as native (./multicall.nix isWindows path): one
-      # bc.exe with `dc` as an embedded argv[0] alias, no $(READLINELIB) link.
+      build = pkgs: withReadlineFallback pkgs.pkgsStatic;
+      # Windows goes through mingw (bc is pure compute), with three non-POSIX
+      # fixes: drop readline/flex (nixpkgs lists them as host inputs, which
+      # cross-leak full mingw builds); --without-readline; and -Dsrandom/-Drandom
+      # since mingw has no BSD random().
       windowsBuild = pkgs:
         let
           mingwPkgs = lib.mingwStaticCross pkgs;
