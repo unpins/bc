@@ -29,7 +29,6 @@
       # defaultProgram pins bc so the bare `--version` smoke hits it.
       engine = "unpin-llvm";
       multicall = {
-        inferLinkInputs = true;
         defaultProgram = "bc";
         programs = [ { name = "bc"; } { name = "dc"; } ];
       };
