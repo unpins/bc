@@ -30,7 +30,6 @@
       engine = "unpin-llvm";
       multicall = {
         inferLinkInputs = true;
-        darwin = true;
         defaultProgram = "bc";
         programs = [ { name = "bc"; } { name = "dc"; } ];
       };
