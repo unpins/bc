@@ -14,9 +14,11 @@
   outputs = { self, unpins-lib }:
     let
       lib = unpins-lib.lib;
+      # ncurses fallback-terminfo is baked centrally for every engine-Linux build
+      # (native-overlay/ncurses.nix), so p.ncurses already carries it — no
+      # per-package embedFallbackTerminfo. bc is Linux-only (Windows = mingw).
       withReadlineFallback = p:
-        let ncFB = lib.embedFallbackTerminfoOnly p.ncurses;
-        in p.bc.override { readline = p.readline.override { ncurses = ncFB; }; };
+        p.bc.override { readline = p.readline.override { ncurses = p.ncurses; }; };
     in
     lib.mkStandaloneFlake {
       inherit self;
