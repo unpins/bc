@@ -51,6 +51,7 @@ The [Releases](https://github.com/unpins/bc/releases) page has standalone binari
 ## Build notes
 
 - **Platforms:** Linux, macOS, Windows.
-- **Multicall:** `bc` and `dc` each get their own renamed copy of the whole object graph — the shared `lib/number.o` calls back into per-program `rt_error`/`out_of_memory`, so a single shared copy can't bind both. See [`multicall.nix`](multicall.nix).
+- **Multicall:** `bc` and `dc` fold into one binary, selected by command name (argv[0]). On Linux/macOS the fold is done by the unpin-llvm engine (per-program bitcode module, internalized then whole-program-linked). Windows (mingw) can't run the engine, so it uses an objcopy renamed-copy fold instead: `bc` and `dc` each get their own copy of the object graph because the shared `lib/number.o` calls back into per-program `rt_error`/`out_of_memory` and a single shared copy can't bind both. See [`multicall.nix`](multicall.nix).
+- **Tests:** GNU bc ships no automated `make check` suite (`Test/` holds manual timing benchmarks, not in `SUBDIRS`), so there is no native test suite to wire.
 - **Line editing:** Linux/macOS link readline with an embedded-fallback terminfo so interactive editing works without a host `/usr/share/terminfo`. The Windows (mingw) build is `--without-readline` (pure compute), so no readline/ncurses cross is pulled in.
 - **Man pages:** the `bc.1` and `dc.1` pages are embedded; read with `unpin man bc` / `unpin man bc dc`.
