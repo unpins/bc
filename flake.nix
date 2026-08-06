@@ -27,11 +27,10 @@
       smoke = [ "--version" ];
       smokePattern = "1\\.08";
 
-      # bc + dc fold into one `bc` binary; `dc` is an argv[0] alias.
-      # defaultProgram pins bc so the bare `--version` smoke hits it.
+      # bc + dc fold into one `bc` binary; `dc` is an argv[0] alias. `bc` is
+      # itself a program, so a bare invocation runs it.
       engine = "unpin-llvm";
       multicall = {
-        defaultProgram = "bc";
         programs = [ { name = "bc"; } { name = "dc"; } ];
       };
       build = pkgs: withReadlineFallback pkgs.pkgsStatic;
