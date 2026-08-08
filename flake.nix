@@ -27,10 +27,12 @@
       smoke = [ "--version" ];
       smokePattern = "1\\.08";
 
-      # bc + dc fold into one `bc` binary; `dc` is an argv[0] alias. `bc` is
-      # itself a program, so a bare invocation runs it.
+      # bc + dc fold into one `bc` binary on every target, windows included;
+      # `dc` is an argv[0] alias. `bc` is itself a program, so a bare invocation
+      # runs it. Pure C — no requires.cxx.
       engine = "unpin-llvm";
       multicall = {
+        windows = true;
         programs = [ { name = "bc"; } { name = "dc"; } ];
       };
       build = pkgs: withReadlineFallback pkgs.pkgsStatic;
@@ -39,24 +41,16 @@
       # cross-leak full mingw builds); --without-readline; and -Dsrandom/-Drandom
       # since mingw has no BSD random().
       windowsBuild = pkgs:
-        let
-          mingwPkgs = lib.mingwStaticCross pkgs;
-          mingwBc = mingwPkgs.bc.overrideAttrs (old: {
-            buildInputs = [ ];
-            configureFlags = (old.configureFlags or [ ]) ++ [ "--without-readline" ];
-            env = (old.env or { }) // {
-              NIX_CFLAGS_COMPILE = builtins.concatStringsSep " " [
-                (old.env.NIX_CFLAGS_COMPILE or "")
-                "-Dsrandom=srand"
-                "-Drandom=rand"
-              ];
-            };
-          });
-        in
-        import ./multicall.nix { lib = pkgs.lib // lib; } {
-          inherit pkgs;
-          basePkg = mingwBc;
-          isWindows = true;
-        };
+        (lib.mingwStaticCross pkgs).bc.overrideAttrs (old: {
+          buildInputs = [ ];
+          configureFlags = (old.configureFlags or [ ]) ++ [ "--without-readline" ];
+          env = (old.env or { }) // {
+            NIX_CFLAGS_COMPILE = builtins.concatStringsSep " " [
+              (old.env.NIX_CFLAGS_COMPILE or "")
+              "-Dsrandom=srand"
+              "-Drandom=rand"
+            ];
+          };
+        });
     };
 }
