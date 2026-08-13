@@ -8,22 +8,17 @@
 
   inputs.unpins-lib.url = "github:unpins/nix-lib";
 
-  # bc --with-readline pulls ncurses for terminfo lookup, so swap in the
-  # embedded-fallback ncurses (same as dash) so line editing works without a
-  # host /usr/share/terminfo.
+  # bc --with-readline pulls ncurses for terminfo lookup. Line editing works
+  # without a host /usr/share/terminfo because the fallback terminfo is baked
+  # into ncurses centrally (native-overlay/ncurses.nix), for every engine-Linux
+  # build — this package needs no swap of its own.
   outputs = { self, unpins-lib }:
     let
       lib = unpins-lib.lib;
-      # ncurses fallback-terminfo is baked centrally for every engine-Linux build
-      # (native-overlay/ncurses.nix), so p.ncurses already carries it — no
-      # per-package embedFallbackTerminfo. bc is Linux-only (Windows = mingw).
-      withReadlineFallback = p:
-        p.bc.override { readline = p.readline.override { ncurses = p.ncurses; }; };
     in
     lib.mkStandaloneFlake {
       inherit self;
       name = "bc";
-      binName = "bc";
       smoke = [ "--version" ];
       smokePattern = "1\\.08";
 
@@ -35,7 +30,7 @@
         windows = true;
         programs = [ { name = "bc"; } { name = "dc"; } ];
       };
-      build = pkgs: withReadlineFallback pkgs.pkgsStatic;
+      build = pkgs: pkgs.pkgsStatic.bc;
       # Windows goes through mingw (bc is pure compute), with three non-POSIX
       # fixes: drop readline/flex (nixpkgs lists them as host inputs, which
       # cross-leak full mingw builds); --without-readline; and -Dsrandom/-Drandom
