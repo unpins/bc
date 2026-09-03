@@ -30,7 +30,17 @@
         windows = true;
         programs = [ { name = "bc"; } { name = "dc"; } ];
       };
-      build = pkgs: pkgs.pkgsStatic.bc;
+      build = pkgs:
+        pkgs.pkgsStatic.bc.overrideAttrs (_: {
+          # nixpkgs sets doCheck for bc, and it buys nothing: `Test/` ships in
+          # the tarball but is wired into no build at all — not in SUBDIRS, and
+          # no TESTS, check_PROGRAMS or check-local anywhere in the tree, so
+          # automake's `check` has nothing to run. Off explicitly, because
+          # inheriting a `true` that does nothing reads as coverage. (The files
+          # are timing/demo programs with no expected output to compare
+          # against; wiring them would mean inventing the expectations.)
+          doCheck = false;
+        });
       # Windows goes through mingw (bc is pure compute), with three non-POSIX
       # fixes: drop readline/flex (nixpkgs lists them as host inputs, which
       # cross-leak full mingw builds); --without-readline; and -Dsrandom/-Drandom
