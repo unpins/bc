@@ -29,6 +29,10 @@ unpin install bc
 
 Installing creates both `bc` and `dc`.
 
+## Man pages
+
+Both pages are embedded — read them with `unpin man bc` and `unpin man bc dc`.
+
 ## Build locally
 
 ```bash
@@ -50,8 +54,6 @@ The [Releases](https://github.com/unpins/bc/releases) page has standalone binari
 
 ## Build notes
 
-- **Platforms:** Linux, macOS, Windows.
 - **Multicall:** `bc` and `dc` fold into one binary on every platform, Windows included, done by the unpin-llvm engine (per-program bitcode module, internalized then whole-program-linked).
 - **Tests:** GNU bc ships no automated `make check` suite (`Test/` holds manual timing benchmarks, not in `SUBDIRS`), so there is no native test suite to wire.
-- **Line editing:** Linux/macOS link readline with an embedded-fallback terminfo so interactive editing works without a host `/usr/share/terminfo`. The Windows (mingw) build is `--without-readline` (pure compute), so no readline/ncurses cross is pulled in.
-- **Man pages:** the `bc.1` and `dc.1` pages are embedded; read with `unpin man bc` / `unpin man bc dc`.
+- **Line editing:** Linux/macOS link readline with an embedded-fallback terminfo so interactive editing works without a host `/usr/share/terminfo`. The Windows build is `--without-readline` (pure compute), so no readline/ncurses cross is pulled in.
