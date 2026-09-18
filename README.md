@@ -9,7 +9,7 @@
 
 Part of the [unpins](https://unpins.org) catalog; install it with [`unpin`](https://github.com/unpins/unpin): `unpin install bc`.
 
-`bc` and `dc` are folded into one binary; which one runs is decided by the name you call it by.
+`bc` and `dc` ship together in one binary.
 
 ## Usage
 
@@ -54,6 +54,5 @@ The [Releases](https://github.com/unpins/bc/releases) page has standalone binari
 
 ## Build notes
 
-- **Multicall:** `bc` and `dc` fold into one binary on every platform, Windows included, done by the unpin-llvm engine (per-program bitcode module, internalized then whole-program-linked).
 - **Tests:** GNU bc ships no automated `make check` suite (`Test/` holds manual timing benchmarks, not in `SUBDIRS`), so there is no native test suite to wire.
 - **Line editing:** Linux/macOS link readline with an embedded-fallback terminfo so interactive editing works without a host `/usr/share/terminfo`. The Windows build is `--without-readline` (pure compute), so no readline/ncurses cross is pulled in.
