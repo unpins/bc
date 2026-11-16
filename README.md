@@ -55,4 +55,4 @@ The [Releases](https://github.com/unpins/bc/releases) page has standalone binari
 ## Build notes
 
 - **Tests:** GNU bc ships no automated `make check` suite (`Test/` holds manual timing benchmarks, not in `SUBDIRS`), so there is no native test suite to wire.
-- **Line editing:** Linux/macOS link readline with an embedded-fallback terminfo so interactive editing works without a host `/usr/share/terminfo`. The Windows build is `--without-readline` (pure compute), so no readline/ncurses cross is pulled in.
+- **Line editing:** arrow keys and history work on every platform, Windows included. On Linux and macOS a built-in terminal description means this works without a host `/usr/share/terminfo`.
