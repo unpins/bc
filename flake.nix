@@ -41,21 +41,19 @@
           # against; wiring them would mean inventing the expectations.)
           doCheck = false;
         });
-      # Windows goes through mingw (bc is pure compute), with three non-POSIX
-      # fixes: drop readline/flex (nixpkgs lists them as host inputs, which
-      # cross-leak full mingw builds); --without-readline; and -Dsrandom/-Drandom
-      # since mingw has no BSD random().
+      # Windows goes through mingw. flex stays out of buildInputs: the tarball
+      # ships the generated scanner, and a host-side flex would cross-build for
+      # nothing. readline links termcap there, which defines `PC` as readline's
+      # terminal.c does; readline's own NEED_EXTERN_PC makes its copy extern.
       windowsBuild = pkgs:
-        (lib.mingwStaticCross pkgs).bc.overrideAttrs (old: {
-          buildInputs = [ ];
-          configureFlags = (old.configureFlags or [ ]) ++ [ "--without-readline" ];
-          env = (old.env or { }) // {
-            NIX_CFLAGS_COMPILE = builtins.concatStringsSep " " [
-              (old.env.NIX_CFLAGS_COMPILE or "")
-              "-Dsrandom=srand"
-              "-Drandom=rand"
-            ];
-          };
+        let mg = lib.mingwStaticCross pkgs; in
+        mg.bc.overrideAttrs (old: {
+          buildInputs = [
+            (mg.readline.overrideAttrs (o: {
+              env = o.env // { CFLAGS = o.env.CFLAGS + " -DNEED_EXTERN_PC"; };
+            }))
+          ];
+          patches = (old.patches or [ ]) ++ [ ./patches/mingw-random.patch ];
         });
     };
 }

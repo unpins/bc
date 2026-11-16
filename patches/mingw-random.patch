@@ -1,0 +1,36 @@
+Windows has no BSD random()/srandom(), and mingw's rand() returns only
+0..0x7fff (RAND_MAX of the Microsoft CRT). bc's `random()` builtin hands
+random()'s value to the user, so mapping it to rand() would shrink its range
+from 0..2^31-1 to 0..32767. Compose three rand() calls into the same 31 bits.
+
+--- a/bc/execute.c
++++ b/bc/execute.c
+@@ -294,7 +294,14 @@
+ 
+ 	case 'X': /* Random function. */
+ 	  push_copy (_zero_);
++#ifdef _WIN32
++	  /* rand() spans only 0..0x7fff here; compose random()'s 31 bits.  */
++	  bc_int2num (&ex_stack->s_num,
++		      (rand () & 0x7fff) | (rand () & 0x7fff) << 15
++		      | (rand () & 1) << 30);
++#else
+ 	  bc_int2num (&ex_stack->s_num, random());
++#endif
+ 	  break;
+ 	}
+ 	break;
+--- a/bc/main.c
++++ b/bc/main.c
+@@ -87,7 +87,11 @@
+   int long_index;
+   file_node *temp;
+ 
++#ifdef _WIN32
++  srand(time(NULL));
++#else
+   srandom(time(NULL));
++#endif
+ 
+   /* Force getopt to initialize.  Depends on GNU getopt. */
+   optind = 0;
